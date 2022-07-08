@@ -32,7 +32,7 @@ public class Connection extends org.melior.client.core.Connection<LdapClientConf
     final LdapClientConfig configuration,
     final ConnectionPool<LdapClientConfig, Connection, DirContext> connectionPool,
     final LdapContextSource ldapContextSource) throws RemotingException{
-        super(configuration, connectionPool, DirContext.class);
+        super(configuration, connectionPool);
 
         this.ldapContextSource = ldapContextSource;
   }
