@@ -57,7 +57,7 @@ Wire in and use the LDAP client.  Use the LDAP object mapper to request only tho
 private LdapClient client;
 
 public List<Person> foo(String name) throws RemotingException {
-    return curClient.search(LdapQueryBuilder.query().base("ou=person,o=company")
+    return client.search(LdapQueryBuilder.query().base("ou=person,o=company")
         .attributes(LdapObjectMapper.getAttributes(Person.class))
         .where("name").is(name), Person.class);
 }
