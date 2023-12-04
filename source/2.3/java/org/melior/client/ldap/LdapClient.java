@@ -15,6 +15,7 @@ import org.melior.logging.core.Logger;
 import org.melior.logging.core.LoggerFactory;
 import org.melior.service.exception.ExceptionType;
 import org.melior.util.time.Timer;
+import org.springframework.ldap.core.DirContextOperations;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.query.LdapQuery;
 import org.springframework.util.StringUtils;
@@ -124,7 +125,7 @@ public class LdapClient extends LdapClientConfig {
 
         try {
 
-            result = ldapTemplate.search(query, new LdapObjectMapper<T>(entityType));
+            result = ldapTemplate.search(query, LdapObjectMapper.of(entityType));
 
             duration = timer.elapsedTime(TimeUnit.MILLISECONDS);
 
@@ -148,6 +149,59 @@ public class LdapClient extends LdapClientConfig {
         }
 
         return result;
+    }
+
+    /**
+     * Perform modify.
+     * @param <T> The type
+     * @param query The LDAP query
+     * @param instance The instance that provides the new attributes
+     * @throws RemotingException if unable to perform the modify
+     */
+    public <T> void modify(
+        final LdapQuery query,
+        final T instance) throws RemotingException {
+
+        String methodName = "modify";
+        Timer timer;
+        DirContextOperations context;
+        long duration;
+
+        initialize();
+
+        logger.debug(methodName, "Perform modify in LDAP repository.  base = ", query.base(), ", filter = ", query.filter());
+
+        timer = Timer.ofNanos().start();
+
+        try {
+
+            context = ldapTemplate.searchForContext(query);
+
+            LdapObjectMapper.of(instance.getClass()).mapFromInstance(context, instance);
+
+            ldapTemplate.modifyAttributes(context);
+
+            duration = timer.elapsedTime(TimeUnit.MILLISECONDS);
+
+            logger.debug(methodName, "Modify completed successfully.  Duration = ", duration, " ms.");
+        }
+        catch (RuntimeException exception) {
+
+            duration = timer.elapsedTime(TimeUnit.MILLISECONDS);
+
+            logger.debug(methodName, "Modify failed.  Duration = ", duration, " ms.");
+
+            throw new RemotingException(ExceptionType.REMOTING_COMMUNICATION, exception.getMessage(), exception);
+        }
+        catch (Exception exception) {
+
+            duration = timer.elapsedTime(TimeUnit.MILLISECONDS);
+
+            logger.debug(methodName, "Modify failed.  Duration = ", duration, " ms.");
+
+            throw new RemotingException(ExceptionType.REMOTING_COMMUNICATION, "Failed to perform modify: " + exception.getMessage(), exception);
+        }
+
     }
 
 }
